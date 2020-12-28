@@ -1,0 +1,19 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# virtualenv
+venv/
+
+# idea folder
+.idea/
+
+# User folders
+data/
+other/
+
+
+# Temp files
+todolist.txt
+src/test.py
