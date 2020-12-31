@@ -17,11 +17,11 @@ For running the lib use example also *matplotlib* is required.
 
 ## How to use
 
-The module can be used by importing it (See use example for a more in depth usage):
+The module can be used by importing it (See usage example for a more in depth usage):
 
 ```python
-import uniTThermalImage as uti
-obj_uti = uti.UniTThermalImage()
+import uniTThermalImage
+obj_uti = uniTThermalImage.UniTThermalImage()
 obj_uti.init_from_image("examples/IMG_Typical.bmp")
 ```
 
@@ -67,7 +67,7 @@ The data in the .bmp file is distributed in the following blocks:
 | Byte length | Description | Notes |
 | --- | --- | --- |
 | 53 | BMP Header | Standard format |
-| BMP Image size | BMP Data | BGR, 3 bytes per color |
+| BMP Image size | BMP Data | BGR, 3 bytes per pixel |
 | Img Height x Width | Thermal image | Grayscale, 1 byte per pixel |
 | 512 | Colorbar | 256 colors, 2 bytes per color (5 bits red, 6 bits green, 5 bits blue) |
 | 25 | Embedded data | See next table

@@ -96,7 +96,7 @@ class UniTThermalImage:
 
     def export_bmp(self):
         """Exports a version of the input image without its overlay. It keeps the embedded data"""
-        # Fixme: Check if rows needs padding for other resolutions. Now set for the UTi260B which does not requiere them
+        # Fixme: Check if rows needs padding for other resolutions. Now set for the UTi260B which does not require them
         output_bytes = list(self.file_bytes)
         bytes_offset = self.bmp_header['data_start_byte']
         bytes_per_px = round(self.bmp_header['bits_per_px']/8)
@@ -186,17 +186,13 @@ class UniTThermalImage:
         The image depth is 1 byte per pixel [0, 254]
 
         :return: Last byte read. To use as offset for next extracts"""
-        self.raw_image_np = np.zeros((self.bmp_header['img_height_px'], self.bmp_header['img_width_px']), np.uint8)
         raw_image_size = self.bmp_header['img_width_px'] * self.bmp_header['img_height_px']
-        counter_w, counter_h = 0, 0
-        for i in range(self.bmp_header['file_size'], self.bmp_header['file_size'] + raw_image_size):
-            self.raw_image_np[counter_h, counter_w] = self.file_bytes[i]
-            counter_w += 1
-            if counter_w == self.bmp_header['img_width_px']:
-                counter_h += 1
-                counter_w = 0
-        byte_index = self.bmp_header['file_size'] + raw_image_size
-        return byte_index
+        byte_image_end = self.bmp_header['file_size'] + raw_image_size
+        # Load the thermal image slice into a numpy array using frombuffer, as we read bytes. Then reshape to resolution
+        self.raw_image_np = np.frombuffer(self.file_bytes[self.bmp_header['file_size']:byte_image_end], dtype=np.uint8)
+        self.raw_image_np = self.raw_image_np.reshape((self.bmp_header['img_height_px'], self.bmp_header['img_width_px']))
+
+        return byte_image_end
 
     def _extract_colorbar(self, byte_index_input):
         """
@@ -253,19 +249,12 @@ class UniTThermalImage:
 
     def _set_rgb_image(self):
         """Applies colorbar to raw thermal image to generate a clean rgb version of the BMP image"""
-        self.raw_image_rgb_np = np.zeros((self.bmp_header['img_height_px'], self.bmp_header['img_width_px'], 3),
-                                         np.uint8)
-        for idx_h in range(self.bmp_header['img_height_px']):
-            for idx_w in range(self.bmp_header['img_width_px']):
-                self.raw_image_rgb_np[idx_h, idx_w] = self.colorbar_rgb_np[self.raw_image_np[idx_h, idx_w]]
+        # As the raw images are integers between 0 and 255 we can use direct numpy indexing
+        self.raw_image_rgb_np = self.colorbar_rgb_np[self.raw_image_np]
 
     def _set_temp_matrix(self):
         """Calculates the temperature of each pixel in the raw thermal image"""
-        self.temp_array_np = self.raw_image_np.copy().astype(float)
-        for idx_h in range(len(self.temp_array_np)):
-            for idx_w in range(len(self.temp_array_np[idx_h])):
-                self.temp_array_np[idx_h, idx_w] = \
-                    self.temp_min + (self.temp_max - self.temp_min) * (self.raw_image_np[idx_h, idx_w] / 254.0)
+        self.temp_array_np = self.temp_min + (self.temp_max - self.temp_min) * (self.raw_image_np / 254.0)
 
 
 if __name__ == '__main__':
