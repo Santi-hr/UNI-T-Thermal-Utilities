@@ -13,7 +13,6 @@ venv/
 data/
 other/
 
-
 # Temp files
 todolist.txt
 src/test.py
