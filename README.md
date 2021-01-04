@@ -90,3 +90,4 @@ The embedded data is as shown in the next table. All is stored in little endian:
 | 22 - 23 | Center temp. pos X | uint16 | |
 | 24 - 25 | Center temp. pos Y | uint16 | |
 
+Note: Images exported with this script include after this data an aditional uint32 with the timestamp of the image to avoid losing this information.

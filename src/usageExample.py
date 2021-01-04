@@ -17,5 +17,5 @@ point = (100, 100)
 print("Temp in", point, ":", obj_uti.temp_array_np[point], obj_uti.temp_units)
 
 # Plot clean image
-plt.imshow(obj_uti.raw_image_rgb_np)
+plt.imshow(obj_uti.raw_img_rgb_np)
 plt.show()
