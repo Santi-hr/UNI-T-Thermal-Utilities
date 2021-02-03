@@ -33,6 +33,7 @@ python uniTThermalImage.py -i "examples/IMG_Typical.bmp" -bmp -csv
 
 ```bash
 usage: uniTThermalImage.py [-h] -i INPUT [-o OUTPUT] [-bmp] [-csv] [-csv_es]
+                           [-csv_img]
 
 Extracts thermal data from UNI-T thermal camera images
 
@@ -47,6 +48,9 @@ optional arguments:
   -csv_es, --exportcsv_es
                         Exports the thermal data to a csv file, using ;
                         instead of ,
+  -csv_img, --exportcsv_img
+                        Exports the thermal image data to a tab-delimited csv
+                        file. Allows import in ThermImageJ
 ```
 
 This command will create two files from the input image.

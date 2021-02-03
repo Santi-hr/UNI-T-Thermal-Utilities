@@ -79,30 +79,36 @@ class UniTThermalImage:
 
         self.flag_initialized = True
 
-    def export_csv(self, flag_es=False):
+    def export_csv(self, only_img=False, delimiter=',', decimal_sep='.'):
         """Exports data to a csv file
 
-        :param flag_es: True to follow spanish formatting
+        :param only_img: True to skip header data and only save temperature data.
+        :param delimiter: Data row delimiter
+        :param decimal_sep: Decimal separator
         """
         output_path = self.output_folder / (self.filename + self.csv_suffix)
 
         with open(output_path, "w") as file:
-            header_data = ["Units", "Temp min", "Temp max", "Temp center", "Emissivity",
-                           "Temp min X", "Temp min Y", "Temp max X", "Temp max Y", "Datetime"]
-            data_data = [self.temp_units, self.temp_min, self.temp_max, self.temp_center, self.emissivity,
-                         self.temp_min_pos_w, self.temp_min_pos_h, self.temp_max_pos_w, self.temp_max_pos_h,
-                         self.img_datetime.strftime("%Y-%m-%d %H:%M:%S")]
+            if not only_img:
+                # Embedded data values
+                header_data = ["Units", "Temp min", "Temp max", "Temp center", "Emissivity",
+                               "Temp min X", "Temp min Y", "Temp max X", "Temp max Y", "Datetime"]
+                data_data = [self.temp_units, self.temp_min, self.temp_max, self.temp_center, self.emissivity,
+                             self.temp_min_pos_w, self.temp_min_pos_h, self.temp_max_pos_w, self.temp_max_pos_h,
+                             self.img_datetime.strftime("%Y-%m-%d %H:%M:%S")]
 
-            file.write(self.__csv_str_line_formatter(header_data, flag_es))
-            file.write(self.__csv_str_line_formatter(data_data, flag_es))
+                file.write(self.__csv_str_line_formatter(header_data, delimiter, decimal_sep))
+                file.write(self.__csv_str_line_formatter(data_data, delimiter, decimal_sep))
 
-            header_data_img = ["Pixel temperatures", "Down Y (Height)", "Right X (Width)"]
-            file.write(self.__csv_str_line_formatter(header_data_img, flag_es))
+                # Thermal image header
+                header_data_img = ["Pixel temperatures", "Down Y (Height)", "Right X (Width)"]
+                file.write(self.__csv_str_line_formatter(header_data_img, delimiter, decimal_sep))
+            # Thermal image as temperature values
             for idx_h in range(len(self.temp_array_np)):
                 temp_list = []
                 for idx_w in range(len(self.temp_array_np[idx_h])):
                     temp_list.append(self.temp_array_np[idx_h, idx_w])
-                file.write(self.__csv_str_line_formatter(temp_list, flag_es))
+                file.write(self.__csv_str_line_formatter(temp_list, delimiter, decimal_sep))
 
     def export_bmp(self):
         """Exports a version of the input image without its overlay. It keeps the embedded data"""
@@ -139,19 +145,15 @@ class UniTThermalImage:
             raise OSError("Output folder %s is not a valid directoy" % folder_path)
         self.output_folder = folder_path
 
-    def __csv_str_line_formatter(self, list_in, flag_es):
+    @staticmethod
+    def __csv_str_line_formatter(list_in, delimiter, decimal_sep):
         """Helper to format the strings to be written on the csv
 
-        :param list_in: List that represent one csv line
-        :param flag_es: True to follow spanish formatting
+        :param delimiter: Data row delimiter
+        :param decimal_sep: Decimal separator
         :return: Formatted string
         """
-        delimiter = ","
-        decimal_sep = "."
         converted_list = [str(element) for element in list_in]
-        if flag_es:
-            delimiter = ";"
-            decimal_sep = ","
         return (delimiter.join(converted_list).replace(".", decimal_sep)) + '\n'
 
     def __read_int32(self, ini):
@@ -319,6 +321,8 @@ if __name__ == '__main__':
                         help="Exports the thermal data to a csv file", required=False)
     parser.add_argument("-csv_es", "--exportcsv_es", action="store_true",
                         help="Exports the thermal data to a csv file, using ; instead of ,", required=False)
+    parser.add_argument("-csv_img", "--exportcsv_img", action="store_true",
+                        help="Exports the thermal image data to a tab-delimited csv file. Allows import in ThermImageJ", required=False)
 
     args = parser.parse_args()
 
@@ -332,10 +336,13 @@ if __name__ == '__main__':
         if args.exportbmp:
             obj_img.export_bmp()
 
-        if args.exportcsv or args.exportcsv_es:
-            csv_flag_es = False
-            if args.exportcsv_es:
-                csv_flag_es = True
-            obj_img.export_csv(csv_flag_es)
+        if args.exportcsv:
+            obj_img.export_csv()
+        if args.exportcsv_es:
+            obj_img.export_csv(delimiter=';', decimal_sep=',')
+        if args.exportcsv_img:
+            obj_img.export_csv(only_img=True, delimiter='\t')
+
+
     else:
         raise RuntimeError("Error extracting data from image")
