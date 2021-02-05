@@ -4,7 +4,7 @@
 UNI-T thermal cameras, like UTi260B, store a clean thermal image embedded at the end of the bmp files that are generated for each capture.
 In addition, the selected colorbar, configuration variables, and the temperature of some key points are also stored.
 
-The current small script allows extracting this data and exporting it or as a lib for its use from other scripts.
+The current small script allows extracting this data and exporting it or as a python lib for its use from other scripts.
 
 My end goal is to also provide a GUI tool that can perform some analysis the UNI-T software lacks.
 Like setting custom colorbars, or printing temperature profiles.
@@ -13,11 +13,11 @@ Like setting custom colorbars, or printing temperature profiles.
 
 It only needs the Python package *numpy*.
 
-For running the lib use example also *matplotlib* is required.
+For running the lib usage example also *matplotlib* is required.
 
 ## How to use
 
-The module can be used by importing it (See usage example for a more in depth usage):
+The module can be used by importing it (See [usage example](src/usageExample.py) for a more in depth example):
 
 ```python
 import uniTThermalImage
@@ -72,7 +72,7 @@ The data in the .bmp file is distributed in the following blocks:
 | --- | --- | --- |
 | 53 | BMP Header | Standard format |
 | BMP Image size | BMP Data | BGR, 3 bytes per pixel |
-| Img Height x Width | Thermal image | Grayscale, 1 byte per pixel |
+| Img Height x Width | Thermal image | Grayscale, 1 byte per pixel ([0, 254] = [Min. temp., Max. temp.]) |
 | 512 | Colorbar | 256 colors, 2 bytes per color (5 bits red, 6 bits green, 5 bits blue) |
 | 25 | Embedded data | See next table
 
