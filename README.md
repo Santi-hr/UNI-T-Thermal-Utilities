@@ -2,12 +2,16 @@
 ![Extraction examples](https://raw.githubusercontent.com/Santi-hr/UNI-T-Thermal-Utilities/main/examples/readme_header.jpg)
 
 UNI-T thermal cameras, like UTi260B, store a clean thermal image embedded at the end of the bmp files that are generated for each capture.
-In addition, the selected colorbar, configuration variables, and the temperature of some key points are also stored.
+In addition, the selected palette, configuration variables, and the temperature of some key points are also stored.
 
 The current small script allows extracting this data and exporting it or as a python lib for its use from other scripts.
+Also, it provides a function to change the palette, between the ones from the camera or to a custom one.  
+
+Beware, the extracted thermal data can have large errors when there is a large temperature range. This happens because the data stored does not come directly from the sensor, but from what appears on screen.
+For precise measurements use the "point temperature" option directly on the camera. 
 
 My end goal is to also provide a GUI tool that can perform some analysis the UNI-T software lacks.
-Like setting custom colorbars, or printing temperature profiles.
+Like setting custom palettes, or printing temperature profiles.
 
 ## Requirements
 
@@ -26,10 +30,13 @@ obj_uti.init_from_image("examples/IMG_Typical.bmp")
 ```
 
 Or by calling it as a script:
-
 ```bash
 python uniTThermalImage.py -i "examples/IMG_Typical.bmp" -bmp -csv
 ```
+
+This command will create two files from the input image.
+A cleaned thermal image without the labels, and a csv file with the embedded data and the temperature for each point of the image:
+
 
 ```bash
 usage: uniTThermalImage.py [-h] -i INPUT [-o OUTPUT] [-bmp] [-csv] [-csv_es]
@@ -51,11 +58,14 @@ optional arguments:
   -csv_img, --exportcsv_img
                         Exports the thermal image data to a tab-delimited csv
                         file. Allows import in ThermImageJ
+  -p PALETTE, --palette PALETTE
+                        Sets palette. Multiple. Options: iron, rainbow,
+                        white_hot, red_hot, lava, rainbow_hc, reverse
 ```
-
-This command will create two files from the input image.
-A cleaned thermal image without the labels, and a csv file with the embbeded data and the temperature for each point of the image. 
-
+Regarding the palettes, to get *black_hot* use two palette arguments. See next example: 
+```bash
+python uniTThermalImage.py -i "examples/IMG_Typical.bmp" -bmp -p white_hot -p reverse
+```
 
 ## Tested cameras:
 
@@ -72,9 +82,11 @@ The data in the .bmp file is distributed in the following blocks:
 | --- | --- | --- |
 | 53 | BMP Header | Standard format |
 | BMP Image size | BMP Data | BGR, 3 bytes per pixel |
-| Img Height x Width | Thermal image | Grayscale, 1 byte per pixel ([0, 254] = [Min. temp., Max. temp.]) |
-| 512 | Colorbar | 256 colors, 2 bytes per color (5 bits red, 6 bits green, 5 bits blue) |
+| Img Height x Width | Thermal image | Grayscale, 1 byte per pixel ([0, 254] = [Min. temp., Max. temp.])* |
+| 512 | Palette | 256 colors, 2 bytes per color (5 bits red, 6 bits green, 5 bits blue) |
 | 25 | Embedded data | See next table
+
+*Using this approximation temperatures are not exact when the temperature range is large. This behaviour is also seen in the UNI-T software. 
 
 The embedded data is as shown in the next table. All is stored in little endian:
 
