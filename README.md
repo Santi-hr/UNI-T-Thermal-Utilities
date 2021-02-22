@@ -7,7 +7,7 @@ In addition, the selected palette, configuration variables, and the temperature 
 The current small script allows extracting this data and exporting it or as a python lib for its use from other scripts.
 Also, it provides a function to change the palette, between the ones from the camera or to a custom one.  
 
-Beware, the extracted thermal data can have large errors when there is a large temperature range. This happens because the data stored does not come directly from the sensor, but from what appears on screen.
+Beware, the extracted thermal data can have large errors when there is a large temperature range. This happens because the data stored does not come directly from the sensor, but from what appears on screen. Check [here](docs/temperature_issue.md) for mor information.
 For precise measurements use the "point temperature" option directly on the camera. 
 
 My end goal is to also provide a GUI tool that can perform some analysis the UNI-T software lacks.
@@ -31,7 +31,7 @@ obj_uti.init_from_image("examples/IMG_Typical.bmp")
 
 Or by calling it as a script:
 ```bash
-python uniTThermalImage.py -i "examples/IMG_Typical.bmp" -bmp -csv
+python uniTThermalImage.py -i "examples/IMG_Typical.bmp" -bmp -csv en
 ```
 
 This command will create two files from the input image.
@@ -39,8 +39,8 @@ A cleaned thermal image without the labels, and a csv file with the embedded dat
 
 
 ```bash
-usage: uniTThermalImage.py [-h] -i INPUT [-o OUTPUT] [-bmp] [-csv] [-csv_es]
-                           [-csv_img]
+usage: uniTThermalImage.py [-h] -i INPUT [-o OUTPUT] [-bmp] [-csv {en,es,img}]
+                           [-p PALETTE] [-nf]
 
 Extracts thermal data from UNI-T thermal camera images
 
@@ -51,16 +51,16 @@ optional arguments:
   -o OUTPUT, --output OUTPUT
                         Desired output folder
   -bmp, --exportbmp     Exports a clean thermal image from the input one
-  -csv, --exportcsv     Exports the thermal data to a csv file
-  -csv_es, --exportcsv_es
-                        Exports the thermal data to a csv file, using ;
-                        instead of ,
-  -csv_img, --exportcsv_img
-                        Exports the thermal image data to a tab-delimited csv
-                        file. Allows import in ThermImageJ
+  -csv {en,es,img}, --exportcsv {en,es,img}
+                        Exports the thermal data to a csv file. Options: en -
+                        default csv, es - semicolon delimited csv, img - only
+                        image data to a tab-delimited csv. Allows import in
+                        ThermImageJ
   -p PALETTE, --palette PALETTE
                         Sets palette. Multiple. Options: iron, rainbow,
                         white_hot, red_hot, lava, rainbow_hc, reverse
+  -nf, --nofix          Processes data without temperature fix. Check
+                        temperature_issue.md for more info
 ```
 Regarding the palettes, to get *black_hot* use two palette arguments. See next example: 
 ```bash
@@ -86,7 +86,8 @@ The data in the .bmp file is distributed in the following blocks:
 | 512 | Palette | 256 colors, 2 bytes per color (5 bits red, 6 bits green, 5 bits blue) |
 | 25 | Embedded data | See next table
 
-*Using this approximation temperatures are not exact when the temperature range is large. This behaviour is also seen in the UNI-T software. 
+*Using this approximation temperatures are not exact when the temperature range is large.
+This behaviour is also seen in the UNI-T software. [More info.](docs/temperature_issue.md)
 
 The embedded data is as shown in the next table. All is stored in little endian:
 

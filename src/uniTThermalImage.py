@@ -7,7 +7,11 @@ from datetime import datetime
 class UniTThermalImage:
     """Class to handle UNI-T thermal camera images. Tested with UTi260B"""
 
-    def __init__(self):
+    def __init__(self, *, use_fix=True):
+        """Class constructor
+
+        :param use_fix: Temperature fix can be disabled to increase performance greatly if not going to be used
+        """
         # User configurable data
         self.bmp_suffix = "_thermal_rgb.bmp"
         self.csv_suffix = ".csv"
@@ -20,15 +24,23 @@ class UniTThermalImage:
 
         self.bmp_header = {}  # Bmp header of the loaded image
 
+        self.palette_rgb_np = None  # Numpy array [Pallete Len, 3] with the rgb values of the palette
+
         self.raw_img_np = None      # Numpy array [W,L] with the raw thermal image
-        self.raw_img_rgb_np = None  # Numpy array [W,L,3] with the rgb thermal image (palette applied to raw)
-        self.palette_rgb_np = None  # Numpy array [CbL,3] with the rgb values of the palette
-        self.temp_array_np = None   # Numpy array [W,L] with the thermal values for each pixel
+        self.raw_img_rgb_np = None  # Numpy array [W,L,3] with the rgb thermal image (palette applied to previous)
+        self.raw_temp_np = None     # Numpy array [W,L] with the temperature of each pixel using linear interpolation
+
+        self.fix_img_np = None      # Numpy array [W,L] with a fixed thermal image
+        self.fix_img_rgb_np = None  # Numpy array [W,L,3] with the rgb thermal image (palette applied to previous)
+        self.fix_temp_np = None     # Numpy array [W,L] with the temperature of each pixel using 3 point interpolation
+        # The fix uses a linear interpolation that passes through the center temperature to reduce temperature error
+        # See docs/temperature_issue.md to know more about why the need for a fix
+        self.use_fix = use_fix      # Fix can be disabled to increase performance greatly if not going to be used
 
         self.temp_units = 'N'       # Temperature units, Celsius (C) or Fahrenheit (F)
-        self.temp_max = 0           # Maximum temperature on the frame
-        self.temp_min = 0           # Minimum temperature on the frame
-        self.temp_center = 0        # Center temperature on the frame
+        self.temp_max = 0           # Maximum temperature of the picture
+        self.temp_min = 0           # Minimum temperature of the picture
+        self.temp_center = 0        # Center temperature of the picture
         self.emissivity = 0         # Configured emissivity
         self.temp_min_pos_w = 0     # Pixel pos in width axis of the minimum temperature
         self.temp_min_pos_h = 0     # Pixel pos in height axis of the minimum temperature
@@ -37,7 +49,7 @@ class UniTThermalImage:
         self.temp_center_pos_w = 0  # Pixel pos in width axis of the center temperature
         self.temp_center_pos_h = 0  # Pixel pos in height axis of the center temperature
 
-        self.img_datetime = None  # Datetime object with the date and time of image capture
+        self.img_datetime = None    # Datetime object with the date and time of image capture
 
         self.__palette_updated = False  # True if palette was changed
 
@@ -76,18 +88,41 @@ class UniTThermalImage:
         self.__extract_file_time(byte_offset)
 
         # Set internal variables using the loaded data
+        self.__set_raw_temp_matrix()
+        if self.use_fix:
+            self.__set_fix_temp_matrix()
+            self.__set_fix_grayscale_image()
         self.__set_rgb_image()
-        self.__set_temp_matrix()
 
         self.flag_initialized = True
 
-    def export_csv(self, only_img=False, delimiter=',', decimal_sep='.'):
+    def set_palette(self, palette_in_np=None, reverse=False):
+        """Changes the palette and updates the rbg image
+
+        :param palette_in_np: RGB Palette as (256 ,3) numpy array
+        :param reverse: Bool flag. If true the current palette is reversed
+        """
+        if palette_in_np is not None:
+            if palette_in_np.shape != (256, 3):
+                raise ValueError("Invalid shape of palette. Expected (256,3), actual: " + str(palette_in_np.shape))
+            self.palette_rgb_np = palette_in_np
+        if reverse:
+            self.palette_rgb_np = np.flip(self.palette_rgb_np, 0)
+        self.__set_rgb_image()
+        self.__palette_updated = True
+
+    def export_csv(self, only_img=False, delimiter=',', decimal_sep='.', export_fix=True):
         """Exports data to a csv file
 
         :param only_img: True to skip header data and only save temperature data.
         :param delimiter: Data row delimiter
         :param decimal_sep: Decimal separator
+        :param export_fix: Exports data using fix, if possible
         """
+        export_temp_np = self.raw_temp_np
+        if self.use_fix and export_fix:
+            export_temp_np = self.fix_temp_np
+
         output_path = self.output_folder / (self.filename + self.csv_suffix)
 
         with open(output_path, "w") as file:
@@ -106,14 +141,21 @@ class UniTThermalImage:
                 header_data_img = ["Pixel temperatures", "Down Y (Height)", "Right X (Width)"]
                 file.write(self.__csv_str_line_formatter(header_data_img, delimiter, decimal_sep))
             # Thermal image as temperature values
-            for idx_h in range(len(self.temp_array_np)):
+            for idx_h in range(len(export_temp_np)):
                 temp_list = []
-                for idx_w in range(len(self.temp_array_np[idx_h])):
-                    temp_list.append(self.temp_array_np[idx_h, idx_w])
+                for idx_w in range(len(export_temp_np[idx_h])):
+                    temp_list.append(export_temp_np[idx_h, idx_w])
                 file.write(self.__csv_str_line_formatter(temp_list, delimiter, decimal_sep))
 
-    def export_bmp(self):
-        """Exports a version of the input image without its overlay. It keeps the embedded data"""
+    def export_bmp(self, export_fix=True):
+        """Exports a version of the input image without its overlay. It keeps the embedded data
+
+        :param export_fix: Exports data using fix, if possible
+        """
+        export_img_rgb_np = self.raw_img_rgb_np
+        if self.use_fix and export_fix:
+            export_img_rgb_np = self.fix_img_rgb_np
+
         # Fixme: Check if rows needs padding for other resolutions. Now set for the UTi260B which does not require them
         output_bytes = list(self.file_bytes)
         bytes_offset = self.bmp_header['data_start_byte']
@@ -121,9 +163,9 @@ class UniTThermalImage:
         for idx_h in range(self.bmp_header['img_height_px']-1, 0, -1):  # In bmp files the rows are stored from the last
             for idx_w in range(self.bmp_header['img_width_px']):
                 # 24 bit bmp files are BGR
-                output_bytes[bytes_offset] = self.raw_img_rgb_np[idx_h, idx_w, 2]
-                output_bytes[bytes_offset + 1] = self.raw_img_rgb_np[idx_h, idx_w, 1]
-                output_bytes[bytes_offset + 2] = self.raw_img_rgb_np[idx_h, idx_w, 0]
+                output_bytes[bytes_offset] = export_img_rgb_np[idx_h, idx_w, 2]
+                output_bytes[bytes_offset + 1] = export_img_rgb_np[idx_h, idx_w, 1]
+                output_bytes[bytes_offset + 2] = export_img_rgb_np[idx_h, idx_w, 0]
                 bytes_offset += bytes_per_px
 
         # Update palette if it was changed
@@ -321,28 +363,40 @@ class UniTThermalImage:
         output_bytes.append((timestamp >> 24) & 0xFF)
 
     def __set_rgb_image(self):
-        """Applies palette to raw thermal image to generate a clean rgb version of the BMP image"""
+        """Applies palette to grayscale thermal image to generate a clean rgb version of the BMP image"""
         # As the raw images are integers between 0 and 255 we can use direct numpy indexing
         self.raw_img_rgb_np = self.palette_rgb_np[self.raw_img_np]
+        if self.fix_img_np is not None:
+            self.fix_img_rgb_np = self.palette_rgb_np[self.fix_img_np]
 
-    def __set_temp_matrix(self):
-        """Calculates the temperature of each pixel in the raw thermal image"""
-        self.temp_array_np = self.temp_min + (self.temp_max - self.temp_min) * (self.raw_img_np / 254.0)
+    def __set_raw_temp_matrix(self):
+        """Calculates the temperature of each pixel in the raw thermal image. Linear interpolation between max and min temperatures """
+        self.raw_temp_np = self.temp_min + (self.temp_max - self.temp_min) * (self.raw_img_np / 254.0)
 
-    def set_palette(self, palette_in_np=None, reverse=False):
-        """Changes the palette and updates the rbg image
+    def __set_fix_temp_matrix(self):
+        """Calculates the temperature of each pixel in the raw thermal image. Linear interpolation using center temperature"""
+        # Uses a 3 point linear interpolation. Tmin to Tcenter and Tcenter to Tmax. Using this method some error is
+        # reduced as more accurate data is used for the temperature extraction
+        self.fix_temp_np = np.zeros(self.raw_img_np.shape)
+        center_gray = self.raw_img_np[self.temp_center_pos_h, self.temp_center_pos_w]
 
-        :param palette_in_np: RGB Palette as (256 ,3) numpy array
-        :param reverse: Bool flag. If true the current palette is reversed
-        """
-        if palette_in_np is not None:
-            if palette_in_np.shape != (256, 3):
-                raise ValueError("Invalid shape of palette. Expected (256,3), actual: " + str(palette_in_np.shape))
-            self.palette_rgb_np = palette_in_np
-        if reverse:
-            self.palette_rgb_np = np.flip(self.palette_rgb_np, 0)
-        self.__set_rgb_image()
-        self.__palette_updated = True
+        mask_high = (self.raw_img_np >= center_gray) & (self.raw_img_np != 254)
+        self.fix_temp_np[mask_high] = \
+            self.temp_center + (self.temp_max - self.temp_center) * ((self.raw_img_np[mask_high] - center_gray) / (254.0 - center_gray))
+        mask_low = (self.raw_img_np < center_gray) & (self.raw_img_np != 0)
+        self.fix_temp_np[mask_low] = \
+            self.temp_min + (self.temp_center - self.temp_min) * (self.raw_img_np[mask_low] / center_gray)
+
+        # Set min and max temperatures.
+        # This fixes when center temperature has a brightness value equal to 254 or 0.
+        self.fix_temp_np[self.raw_img_np == 0] = self.temp_min
+        self.fix_temp_np[self.raw_img_np == 254] = self.temp_max
+
+    def __set_fix_grayscale_image(self):
+        """Calculates the grayscale thermal image with a linear scale using the fixed temperatures"""
+        self.fix_img_np = np.round((self.fix_temp_np - self.temp_min)/(self.temp_max - self.temp_min) * 254, 0).astype(np.uint8)
+        # Faster using truncation, but would give less precise results
+        # self.fix_img_np = ((self.fix_temp_np - self.temp_min)/(self.temp_max - self.temp_min) * 254).astype(np.uint8)
 
 
 class Palettes:
@@ -362,19 +416,18 @@ if __name__ == '__main__':
     parser.add_argument("-o", "--output", type=str, default="", help="Desired output folder", required=False)
     parser.add_argument("-bmp", "--exportbmp", action="store_true", required=False,
                         help="Exports a clean thermal image from the input one")
-    parser.add_argument("-csv", "--exportcsv", action="store_true", required=False,
-                        help="Exports the thermal data to a csv file")
-    parser.add_argument("-csv_es", "--exportcsv_es", action="store_true", required=False,
-                        help="Exports the thermal data to a csv file, using ; instead of ,")
-    parser.add_argument("-csv_img", "--exportcsv_img", action="store_true", required=False,
-                        help="Exports the thermal image data to a tab-delimited csv file. Allows import in ThermImageJ")
+    parser.add_argument("-csv", "--exportcsv", required=False, choices=['en', 'es', 'img'],
+                        help="Exports the thermal data to a csv file. Options: en - default csv, es - semicolon delimited "
+                             "csv, img - only image data to a tab-delimited csv. Allows import in ThermImageJ")
     parser.add_argument("-p", "--palette", action="append", required=False,
                         help="Sets palette. Multiple. Options: iron, rainbow, white_hot, red_hot, lava, rainbow_hc, reverse")
+    parser.add_argument("-nf", "--nofix", action="store_false", required=False,
+                        help="Processes data without temperature fix. Check temperature_issue.md for more info")
 
     args = parser.parse_args()
 
     # Extract thermal data
-    obj_uti = UniTThermalImage()
+    obj_uti = UniTThermalImage(use_fix=args.nofix)
     obj_uti.init_from_image(args.input)
     if obj_uti.flag_initialized:
         # Set palette
@@ -398,11 +451,12 @@ if __name__ == '__main__':
             obj_uti.export_bmp()
 
         if args.exportcsv:
-            obj_uti.export_csv()
-        if args.exportcsv_es:
-            obj_uti.export_csv(delimiter=';', decimal_sep=',')
-        if args.exportcsv_img:
-            obj_uti.export_csv(only_img=True, delimiter='\t')
+            if args.exportcsv == 'es':
+                obj_uti.export_csv(delimiter=';', decimal_sep=',')
+            elif args.exportcsv == 'img':
+                obj_uti.export_csv(only_img=True, delimiter='\t')
+            else:
+                obj_uti.export_csv()
 
     else:
         raise RuntimeError("Error extracting data from image")

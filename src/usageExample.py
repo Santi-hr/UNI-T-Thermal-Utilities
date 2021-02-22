@@ -11,10 +11,11 @@ obj_uti.init_from_image(filename)
 # -- Print temperature data --
 print("Min temp: %f º%c" % (obj_uti.temp_min, obj_uti.temp_units))
 print("Max temp: %f º%c" % (obj_uti.temp_max, obj_uti.temp_units))
+print("Center temp: %f º%c" % (obj_uti.temp_center, obj_uti.temp_units))
 
 # -- Get temperature of a point --
 point = (100, 100)
-print("Temp in", point, ":", obj_uti.temp_array_np[point], obj_uti.temp_units)
+print("Temp in", point, ":", obj_uti.raw_temp_np[point], obj_uti.temp_units)
 
 # -- Plot clean image --
 plt.imshow(obj_uti.raw_img_rgb_np)
@@ -39,11 +40,24 @@ axs[1, 0].axis('off')
 # Custom palette. Basic Hi/Lo regions highlight
 np_custom_palette = uniTThermalImage.Palettes.white_hot
 for i in range(0, 15):
+    np_custom_palette[-i] = [255, 0, 0]
     np_custom_palette[i] = [0, 0, 255]
-    if i > 0:
-        np_custom_palette[-i] = [255, 0, 0]
 obj_uti.set_palette(np_custom_palette)
 axs[1, 1].imshow(obj_uti.raw_img_rgb_np)
 axs[1, 1].set_title('Custom palette')
 axs[1, 1].axis('off')
+plt.show()
+
+# -- Temperature fix comparison --
+print("Temp center error:", obj_uti.temp_center - obj_uti.raw_temp_np[obj_uti.temp_center_pos_h, obj_uti.temp_center_pos_w], obj_uti.temp_units)
+fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+ax1.imshow(obj_uti.raw_temp_np, cmap='gray')
+ax1.axis('off')
+ax1.set_title('Temp from raw thermal')
+ax2.imshow(obj_uti.fix_temp_np, cmap='gray')
+ax2.axis('off')
+ax2.set_title('Temp with fix')
+ax3.imshow(obj_uti.raw_temp_np - obj_uti.fix_temp_np)
+ax3.axis('off')
+ax3.set_title('Temp diff')
 plt.show()
