@@ -1,13 +1,13 @@
 # UNI-T-Thermal-Utilities
 ![Extraction examples](https://raw.githubusercontent.com/Santi-hr/UNI-T-Thermal-Utilities/main/examples/readme_header.jpg)
 
-UNI-T thermal cameras, like UTi260B, store a clean thermal image embedded at the end of the bmp files that are generated for each capture.
+UNI-T thermal cameras, like UTi260B, store a clean thermal image embedded at the end of its bmp files.
 In addition, the selected palette, configuration variables, and the temperature of some key points are also stored.
 
 The current small script allows extracting this data and exporting it or as a python lib for its use from other scripts.
 Also, it provides a function to change the palette, between the ones from the camera or to a custom one.  
 
-Beware, the extracted thermal data can have large errors when there is a large temperature range. This happens because the data stored does not come directly from the sensor, but from what appears on screen. Check [here](docs/temperature_issue.md) for mor information.
+Beware, the extracted thermal data can have large errors when there is a large temperature range. This happens because the data stored does not come directly from the sensor, but from what appears on screen. Check [here](docs/temperature_issue.md) for more information.
 For precise measurements use the "point temperature" option directly on the camera. 
 
 My end goal is to also provide a GUI tool that can perform some analysis the UNI-T software lacks.
@@ -17,11 +17,11 @@ Like setting custom palettes, or printing temperature profiles.
 
 It only needs the Python package *numpy*.
 
-For running the lib usage example also *matplotlib* is required.
+For running the *usage example* script *matplotlib* is required.
 
 ## How to use
 
-The module can be used by importing it (See [usage example](src/usageExample.py) for a more in depth example):
+The module can be used as a library (See [usage example](src/usageExample.py) for a more in depth example):
 
 ```python
 import uniTThermalImage
@@ -70,6 +70,7 @@ python uniTThermalImage.py -i "examples/IMG_Typical.bmp" -bmp -p white_hot -p re
 ## Tested cameras:
 
 - UTi260B
+- UTi220A Pro
 
 ## Embedded data format
 

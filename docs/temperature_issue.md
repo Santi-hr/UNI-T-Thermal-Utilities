@@ -40,3 +40,21 @@ Anyways, it offers some degree of correction.
 
 In conclusion, when working with images took from these UNI-T cameras keep in mind that the resulting temperatures could not be exact.
 For precise measurements use the built-in camera features.
+
+## Update 06/2021
+
+While searching information about Infiray microbolometers, the brand used on the UTi260B camera, I found an interesting article from a French company.
+In this article they analyze how one of this sensors works and generates an image. 
+
+![Infiray_image_flow](img/infiray_image_flow.png)
+
+One of the steps is indeed a histogram equalization. 
+Although the T3S camera sensor is not the same as the one on the UTi260B, seeing that the final step is converting to 8-bit grayscale just like the stored thermal image in the BMPs makes me think it is the same process for both sensors.
+
+This would confirm that the thermal image is not exactly as accurate as it could be.
+The C200 Infiray cameras (That look like a collaboration between Infiray and UNI-T) seem to have overcome this issue by storing raw radiometric data instead of the sensor 8-bit image.
+
+## Ask UNI-T
+Please, help us notify this issue to UNI-T. If we could get a firmware update with the radiometric data as the Infiray cameras do the UNI-T cameras will become much more suited for professional work.
+
+support@uni-trend.com.cn
