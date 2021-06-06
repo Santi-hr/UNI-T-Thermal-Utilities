@@ -160,7 +160,7 @@ class UniTThermalImage:
         output_bytes = list(self.file_bytes)
         bytes_offset = self.bmp_header['data_start_byte']
         bytes_per_px = round(self.bmp_header['bits_per_px']/8)
-        for idx_h in range(self.bmp_header['img_height_px']-1, 0, -1):  # In bmp files the rows are stored from the last
+        for idx_h in range(self.bmp_header['img_height_px']-1, -1, -1): # In bmp files the rows are stored from the last
             for idx_w in range(self.bmp_header['img_width_px']):
                 # 24 bit bmp files are BGR
                 output_bytes[bytes_offset] = export_img_rgb_np[idx_h, idx_w, 2]
