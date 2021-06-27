@@ -4,8 +4,10 @@
 UNI-T thermal cameras, like UTi260B, store a clean thermal image embedded at the end of its bmp files.
 In addition, the selected palette, configuration variables, and the temperature of some key points are also stored.
 
-The current small script allows extracting this data and exporting it or as a python lib for its use from other scripts.
-Also, it provides a function to change the palette, between the ones from the camera or to a custom one.  
+The current small script allows extracting this data and exporting it, or as a python lib for its use from other scripts.
+Also, it provides functions to: 
+* Change the palette, between the ones from the camera or to a custom one.
+* Set the temperature range, to highlight details or compare between images.
 
 Beware, the extracted thermal data can have large errors when there is a large temperature range. This happens because the data stored does not come directly from the sensor, but from what appears on screen. Check [here](docs/temperature_issue.md) for more information.
 For precise measurements use the "point temperature" option directly on the camera. 
@@ -17,7 +19,7 @@ Like setting custom palettes, or printing temperature profiles.
 
 It only needs the Python package *numpy*.
 
-For running the *usage example* script *matplotlib* is required.
+For running the [usage example](src/usageExample.py) script *matplotlib* is required.
 
 ## How to use
 
@@ -35,7 +37,7 @@ python uniTThermalImage.py -i "examples/IMG_Typical.bmp" -bmp -csv en
 ```
 
 This command will create two files from the input image.
-A cleaned thermal image without the labels, and a csv file with the embedded data and the temperature for each point of the image:
+A cleaned thermal image without the labels, and a csv file with the embedded data and the temperature for each point of the image.
 
 
 ```bash
@@ -59,6 +61,10 @@ optional arguments:
   -p PALETTE, --palette PALETTE
                         Sets palette. Multiple. Options: iron, rainbow,
                         white_hot, red_hot, lava, rainbow_hc, reverse
+  -th TEMPHIGH, --temphigh TEMPHIGH
+                        Sets the maximum on the temperature range
+  -tl TEMPLOW, --templow TEMPLOW
+                        Sets the minimum on the temperature range
   -nf, --nofix          Processes data without temperature fix. Check
                         temperature_issue.md for more info
 ```

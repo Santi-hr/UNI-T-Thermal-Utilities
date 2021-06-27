@@ -48,6 +48,29 @@ axs[1, 1].set_title('Custom palette')
 axs[1, 1].axis('off')
 plt.show()
 
+# Undo changes
+obj_uti.set_palette(uniTThermalImage.Palettes.iron)
+
+# -- Temperature range adjustment example --
+new_temp_min = 30
+new_temp_max = 80
+
+# Plot before changing
+fig, (ax1, ax2) = plt.subplots(1, 2)
+ax1.imshow(obj_uti.raw_img_rgb_np)
+ax1.axis('off')
+ax1.set_title('Original [%d, %d] ºC' % (obj_uti.temp_min, obj_uti.temp_max))
+
+# Change range
+obj_uti.set_temp_range(new_temp_min, new_temp_max)
+ax2.imshow(obj_uti.raw_img_rgb_np)
+ax2.axis('off')
+ax2.set_title('Range [%d, %d] ºC' % (new_temp_min, new_temp_max))
+plt.show()
+
+# Undo changes
+obj_uti.set_temp_range(obj_uti.temp_min, obj_uti.temp_max)
+
 # -- Temperature fix comparison --
 print("Temp center error:", obj_uti.temp_center - obj_uti.raw_temp_np[obj_uti.temp_center_pos_h, obj_uti.temp_center_pos_w], obj_uti.temp_units)
 fig, (ax1, ax2, ax3) = plt.subplots(1, 3)

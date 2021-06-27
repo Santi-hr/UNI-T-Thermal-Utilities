@@ -51,6 +51,9 @@ class UniTThermalImage:
 
         self.img_datetime = None    # Datetime object with the date and time of image capture
 
+        self.temp_max_ow = 0        # Maximum temperature of the picture (Overwritten by changing temp range)
+        self.temp_min_ow = 0        # Minimum temperature of the picture (Overwritten by changing temp range)
+
         self.__palette_updated = False  # True if palette was changed
 
     def init_from_image(self, filepath):
@@ -110,6 +113,28 @@ class UniTThermalImage:
             self.palette_rgb_np = np.flip(self.palette_rgb_np, 0)
         self.__set_rgb_image()
         self.__palette_updated = True
+
+    def set_temp_range(self, t_min, t_max):
+        """Changes the temperature range and updates the gray and rgb images
+        (This changes do not export to avoid loosing data)
+
+        :param t_min: Lower end of the new temperature range
+        :param t_max: Higher end of the new temperature range
+        """
+        # Store the new range limits to allow accessing them if needed by the user
+        self.temp_min_ow = t_min
+        self.temp_max_ow = t_max
+
+        # Min < Max not checked. Can be used to invert the scale, but changing the palette is prefered
+        # Linear interpolation of temperature [t_min, t_max] > [0, 255], temperatures outside this range are clipped
+        # Grayscale numpy array is forced to be uint8 for the rgb conversion, decimal info is lost
+        self.raw_img_np = np.clip(255 * (self.raw_temp_np - t_min) / (t_max - t_min), 0, 255)
+        self.raw_img_np = self.raw_img_np.astype(dtype=np.uint8)
+        if self.use_fix:
+            self.fix_img_np = np.clip(255 * (self.fix_temp_np - t_min) / (t_max - t_min), 0, 255)
+            self.fix_img_np = self.fix_img_np.astype(dtype=np.uint8)
+
+        self.__set_rgb_image()
 
     def export_csv(self, only_img=False, delimiter=',', decimal_sep='.', export_fix=True):
         """Exports data to a csv file
@@ -421,16 +446,20 @@ if __name__ == '__main__':
                              "csv, img - only image data to a tab-delimited csv. Allows import in ThermImageJ")
     parser.add_argument("-p", "--palette", action="append", required=False,
                         help="Sets palette. Multiple. Options: iron, rainbow, white_hot, red_hot, lava, rainbow_hc, reverse")
+    parser.add_argument("-th", "--temphigh", type=float, required=False,
+                        help="Sets the maximum on the temperature range")
+    parser.add_argument("-tl", "--templow", type=float, required=False,
+                        help="Sets the minimum on the temperature range")
     parser.add_argument("-nf", "--nofix", action="store_false", required=False,
                         help="Processes data without temperature fix. Check temperature_issue.md for more info")
 
     args = parser.parse_args()
 
-    # Extract thermal data
+    # - Extract thermal data -
     obj_uti = UniTThermalImage(use_fix=args.nofix)
     obj_uti.init_from_image(args.input)
     if obj_uti.flag_initialized:
-        # Set palette
+        # - Set palette -
         if args.palette:
             for key in args.palette:
                 if key == "reverse":
@@ -443,7 +472,18 @@ if __name__ == '__main__':
                     else:
                         raise ValueError("Palette not found")
 
-        # Export
+        # - Set range -
+        if args.temphigh or args.templow:
+            # Get current range and overwrite only if specified in args
+            t_min = obj_uti.temp_min
+            t_max = obj_uti.temp_max
+            if args.temphigh:
+                t_max = args.temphigh
+            if args.templow:
+                t_min = args.templow
+            obj_uti.set_temp_range(t_min, t_max)
+
+        # - Export -
         if args.output:
             obj_uti.set_output_folder(args.output)
 
