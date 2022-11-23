@@ -116,7 +116,7 @@ class UniTThermalImage:
 
     def set_temp_range(self, t_min, t_max):
         """Changes the temperature range and updates the gray and rgb images
-        (This changes do not export to avoid loosing data)
+        (These changes do not export to avoid loosing data)
 
         :param t_min: Lower end of the new temperature range
         :param t_max: Higher end of the new temperature range
@@ -135,6 +135,26 @@ class UniTThermalImage:
             self.fix_img_np = self.fix_img_np.astype(dtype=np.uint8)
 
         self.__set_rgb_image()
+
+    def get_roi_temps(self, roi_shape=(81, 198, 71, 168)):
+        """Returns the maximum and minimum temperatures from a specified region of interest
+
+        :return: Tuple with (min temp, its position on the ROI, max temp and its position)
+        :param roi_shape: Bounding box of ROI (y_up, y_down, x_left, x_right)
+        """
+
+        if self.use_fix:
+            np_temp_roi = self.fix_temp_np[roi_shape[0]:roi_shape[1], roi_shape[2]:roi_shape[3]]
+        else:
+            np_temp_roi = self.raw_temp_np[roi_shape[0]:roi_shape[1], roi_shape[2]:roi_shape[3]]
+
+        temp_max = np.amax(np_temp_roi)
+        pos_temp_max = np.unravel_index(np.argmax(np_temp_roi), np.shape(np_temp_roi))
+
+        temp_min = np.amin(np_temp_roi)
+        pos_temp_min = np.unravel_index(np.argmin(np_temp_roi), np.shape(np_temp_roi))
+
+        return temp_min, pos_temp_min, temp_max, pos_temp_max
 
     def export_csv(self, only_img=False, delimiter=',', decimal_sep='.', export_fix=True):
         """Exports data to a csv file
