@@ -31,7 +31,7 @@ obj_uti = uniTThermalImage.UniTThermalImage()
 obj_uti.init_from_image("examples/IMG_Typical.bmp")
 ```
 
-Or by running it as a standalone script on a terminal:
+Or by running it as a standalone script on a terminal (See [installation steps](docs/installation_steps.md) for help on getting it working):
 ```bash
 python3 uniTThermalImage.py -i "examples/IMG_Typical.bmp" -bmp -csv en
 ```
