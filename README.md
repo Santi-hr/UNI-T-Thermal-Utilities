@@ -31,7 +31,7 @@ obj_uti = uniTThermalImage.UniTThermalImage()
 obj_uti.init_from_image("examples/IMG_Typical.bmp")
 ```
 
-Or by running it as an standalone script on a terminal:
+Or by running it as a standalone script on a terminal:
 ```bash
 python3 uniTThermalImage.py -i "examples/IMG_Typical.bmp" -bmp -csv en
 ```
@@ -40,16 +40,18 @@ This command will create two files from the input image.
 A cleaned thermal image without the labels, and a csv file with the embedded data and the temperature for each point of the image.
 
 
+
 ```bash
 usage: uniTThermalImage.py [-h] -i INPUT [-o OUTPUT] [-bmp] [-csv {en,es,img}]
                            [-p PALETTE] [-nf]
 
 Extracts thermal data from UNI-T thermal camera images
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -i INPUT, --input INPUT
-                        Input .bmp image
+                        Path to input .bmp image. If path is a folder all its
+                        .bmp images will be processed
   -o OUTPUT, --output OUTPUT
                         Desired output folder
   -bmp, --exportbmp     Exports a clean thermal image from the input one
@@ -60,17 +62,26 @@ optional arguments:
                         ThermImageJ
   -p PALETTE, --palette PALETTE
                         Sets palette. Multiple. Options: iron, rainbow,
-                        white_hot, red_hot, lava, rainbow_hc, reverse
+                        white_hot, red_hot, lava, rainbow_hc, highlight_5p,
+                        highlight_10p, reverse
   -th TEMPHIGH, --temphigh TEMPHIGH
                         Sets the maximum on the temperature range
   -tl TEMPLOW, --templow TEMPLOW
                         Sets the minimum on the temperature range
   -nf, --nofix          Processes data without temperature fix. Check
                         temperature_issue.md for more info
+
+Process finished with exit code 0
+
 ```
-Regarding the palettes, to get *black_hot* use two palette arguments. See next example: 
+
+Palettes available with the `-p` argument:
+
+![Palette examples](https://raw.githubusercontent.com/Santi-hr/UNI-T-Thermal-Utilities/main/docs/img/palettes.png)
+
+To get *black_hot* use two palette arguments. See next example: 
 ```bash
-python uniTThermalImage.py -i "examples/IMG_Typical.bmp" -bmp -p white_hot -p reverse
+python3 uniTThermalImage.py -i "examples/IMG_Typical.bmp" -bmp -p white_hot -p reverse
 ```
 
 ## Tested cameras:
