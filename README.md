@@ -70,9 +70,6 @@ options:
                         Sets the minimum on the temperature range
   -nf, --nofix          Processes data without temperature fix. Check
                         temperature_issue.md for more info
-
-Process finished with exit code 0
-
 ```
 
 Palettes available with the `-p` argument:
