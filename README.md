@@ -31,9 +31,9 @@ obj_uti = uniTThermalImage.UniTThermalImage()
 obj_uti.init_from_image("examples/IMG_Typical.bmp")
 ```
 
-Or by calling it as a script:
+Or by running it as an standalone script on a terminal:
 ```bash
-python uniTThermalImage.py -i "examples/IMG_Typical.bmp" -bmp -csv en
+python3 uniTThermalImage.py -i "examples/IMG_Typical.bmp" -bmp -csv en
 ```
 
 This command will create two files from the input image.
@@ -85,33 +85,33 @@ When an image is taken two files are generated. One .bmp, that contains all ther
 
 The data in the .bmp file is distributed in the following blocks: 
 
-| Byte length | Description | Notes |
-| --- | --- | --- |
-| 53 | BMP Header | Standard format |
-| BMP Image size | BMP Data | BGR, 3 bytes per pixel |
-| Img Height x Width | Thermal image | Grayscale, 1 byte per pixel ([0, 254] = [Min. temp., Max. temp.])* |
-| 512 | Palette | 256 colors, 2 bytes per color (5 bits red, 6 bits green, 5 bits blue) |
-| 25 | Embedded data | See next table
+| Byte length        | Description   | Notes                                                                 |
+|--------------------|---------------|-----------------------------------------------------------------------|
+| 53                 | BMP Header    | Standard format                                                       |
+| BMP Image size     | BMP Data      | BGR, 3 bytes per pixel                                                |
+| Img Height x Width | Thermal image | Grayscale, 1 byte per pixel ([0, 254] = [Min. temp., Max. temp.])*    |
+| 512                | Palette       | 256 colors, 2 bytes per color (5 bits red, 6 bits green, 5 bits blue) |
+| 25                 | Embedded data | See next table                                                        |
 
 *Using this approximation temperatures are not exact when the temperature range is large.
 This behaviour is also seen in the UNI-T software. [More info.](docs/temperature_issue.md)
 
 The embedded data is as shown in the next table. All is stored in little endian:
 
-| Bytes | Description | Type | Notes |
-| --- | --- | --- | --- |
-| 0 | Temperature unit | uint8 | Enum: 0:ºC, 1:ºF |
-| 1 - 2 | Maximum temp. | int16 | Scaled by 10 |
-| 3 - 4 | Minimum temp. | int16 | Scaled by 10 |
-| 5 - 6 | Unknown | int16 | Always 255/0 |
-| 7 - 8 | Center temp. | int16 | Scaled by 10 |
-| 9 | Emissivity | uint8 | Scaled by 100 |
-| 10 - 13 | Unknown | uint16 | Always 6/0/0/0 |
-| 14 - 15 | Max. temp. pos X | uint16 | |
-| 16 - 17 | Max. temp. pos Y | uint16 | |
-| 18 - 19 | Min. temp. pos X | uint16 | |
-| 20 - 21 | Min. temp. pos Y | uint16 | |
-| 22 - 23 | Center temp. pos X | uint16 | |
-| 24 - 25 | Center temp. pos Y | uint16 | |
+| Bytes   | Description        | Type   | Notes            |
+|---------|--------------------|--------|------------------|
+| 0       | Temperature unit   | uint8  | Enum: 0:ºC, 1:ºF |
+| 1 - 2   | Maximum temp.      | int16  | Scaled by 10     |
+| 3 - 4   | Minimum temp.      | int16  | Scaled by 10     |
+| 5 - 6   | Unknown            | int16  | Always 255/0     |
+| 7 - 8   | Center temp.       | int16  | Scaled by 10     |
+| 9       | Emissivity         | uint8  | Scaled by 100    |
+| 10 - 13 | Unknown            | uint16 | Always 6/0/0/0   |
+| 14 - 15 | Max. temp. pos X   | uint16 |                  |
+| 16 - 17 | Max. temp. pos Y   | uint16 |                  |
+| 18 - 19 | Min. temp. pos X   | uint16 |                  |
+| 20 - 21 | Min. temp. pos Y   | uint16 |                  |
+| 22 - 23 | Center temp. pos X | uint16 |                  |
+| 24 - 25 | Center temp. pos Y | uint16 |                  |
 
-Note: Images exported with this script include after this data an aditional uint32 with the timestamp of the image to avoid losing this information.
+Note: Images exported with this script include after this data an additional uint32 with the timestamp of the image to avoid losing this information.

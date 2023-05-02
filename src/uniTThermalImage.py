@@ -24,7 +24,7 @@ class UniTThermalImage:
 
         self.bmp_header = {}  # Bmp header of the loaded image
 
-        self.palette_rgb_np = None  # Numpy array [Pallete Len, 3] with the rgb values of the palette
+        self.palette_rgb_np = None  # Numpy array [Palette Len, 3] with the rgb values of the palette
 
         self.raw_img_np = None      # Numpy array [W,L] with the raw thermal image
         self.raw_img_rgb_np = None  # Numpy array [W,L,3] with the rgb thermal image (palette applied to previous)
@@ -61,7 +61,7 @@ class UniTThermalImage:
 
         :param filepath: Path to the file
         """
-        path_in = Path(filepath)
+        path_in = Path(filepath.replace("\\ ", " "))
         self.filename = path_in.name[:-len(path_in.suffix)]
 
         # Input file checks
@@ -125,7 +125,7 @@ class UniTThermalImage:
         self.temp_min_ow = t_min
         self.temp_max_ow = t_max
 
-        # Min < Max not checked. Can be used to invert the scale, but changing the palette is prefered
+        # Min < Max not checked. Can be used to invert the scale, but changing the palette is preferred
         # Linear interpolation of temperature [t_min, t_max] > [0, 255], temperatures outside this range are clipped
         # Grayscale numpy array is forced to be uint8 for the rgb conversion, decimal info is lost
         self.raw_img_np = np.clip(255 * (self.raw_temp_np - t_min) / (t_max - t_min), 0, 255)
@@ -205,7 +205,7 @@ class UniTThermalImage:
         output_bytes = list(self.file_bytes)
         bytes_offset = self.bmp_header['data_start_byte']
         bytes_per_px = round(self.bmp_header['bits_per_px']/8)
-        for idx_h in range(self.bmp_header['img_height_px']-1, -1, -1): # In bmp files the rows are stored from the last
+        for idx_h in range(self.bmp_header['img_height_px']-1, -1, -1):  # Bmp files store rows from the last first
             for idx_w in range(self.bmp_header['img_width_px']):
                 # 24 bit bmp files are BGR
                 output_bytes[bytes_offset] = export_img_rgb_np[idx_h, idx_w, 2]
@@ -485,8 +485,8 @@ if __name__ == '__main__':
                 if key == "reverse":
                     obj_uti.set_palette(reverse=True)
                 else:
-                    palette_np = {'iron': Palettes.iron, 'rainbow': Palettes.rainbow, 'white_hot': Palettes.white_hot, 
-                                  'red_hot': Palettes.red_hot, 'lava': Palettes.lava, 'rainbow_hc': Palettes.rainbow_hc}.get(key, None)                 
+                    palette_np = {'iron': Palettes.iron, 'rainbow': Palettes.rainbow, 'white_hot': Palettes.white_hot,
+                                  'red_hot': Palettes.red_hot, 'lava': Palettes.lava, 'rainbow_hc': Palettes.rainbow_hc}.get(key, None)
                     if palette_np is not None:
                         obj_uti.set_palette(palette_in_np=palette_np)
                     else:
